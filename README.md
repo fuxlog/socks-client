@@ -1,22 +1,22 @@
-# HUSTSOCKS Client
+# FUXLOGSOCKS Client
 
 ### Requirement
 - GUI(Terminal form) for Edit/Save Proxy Server information
-- Support USERNAME/PASSWORD authentication with HUSTSOCKS Proxy Server
-- Support register USERNAME/PASSWORD to HUSTSOCKS Proxy Server
+- Support USERNAME/PASSWORD authentication with FUXLOGSOCKS Proxy Server
+- Support register USERNAME/PASSWORD to FUXLOGSOCKS Proxy Server
 
 
 ### GUI Review
 
 ```
-Welcome to HUSTSOCKS client
+Welcome to FUXLOGSOCKS client
     1. Current configuration
     2. Register USERNAME/PASSWORD authentication
     0. Exit
 ```
-`Current configuration` is saved in file `hustsocks.conf`. If none, show error.
+`Current configuration` is saved in file `proxy.config`. If none, show error.
 
-`Change configuration` will rewrite proxy information in file `hustsocks.conf`
+`Change configuration` will rewrite proxy information in file `proxy.config`
 
 For user input display
 ```
