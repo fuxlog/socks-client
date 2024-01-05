@@ -5,7 +5,7 @@ from .request import ConnectionRequest, AuthenticationRequest
 
 
 def proxy_connection_authenticate(proxy: socket.socket, username: str, password: str):
-    connection_request = ConnectionRequest(General.VERSION, 1, (Method.USERNAME_PASSWORD))
+    connection_request = ConnectionRequest(General.VERSION, (Method.USERNAME_PASSWORD, ))
     proxy.sendall(connection_request.to_bytes())
 
     data = proxy.recv(BUFFER_SIZE)

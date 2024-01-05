@@ -1,11 +1,10 @@
 class ConnectionRequest():
-    def __init__(self, version: int, nmethods: int, methods: set) -> None:
+    def __init__(self, version: int, methods: set) -> None:
         self.version = version
-        self.nmethod = nmethods
         self.methods = methods
 
     def to_bytes(self) -> bytes:
-        return self.version.to_bytes(1, "big") + self.nmethod.to_bytes(1, "big") + bytes(self.methods)
+        return self.version.to_bytes(1, "big") + len(self.methods).to_bytes(1, "big") + bytes(self.methods)
 
 
 class AuthenticationRequest():

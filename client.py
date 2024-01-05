@@ -1,5 +1,6 @@
 import socket
 import threading
+import select
 from config import CLIENT_HOST, CLIENT_PORT, PROXY_HOST, PROXY_PORT
 from socks.authenticate import proxy_connection_authenticate
 from socks.constants import BUFFER_SIZE
@@ -54,6 +55,15 @@ def start():
             print(register())
 
 
+def forward_data(src: socket.socket, dst: socket.socket):
+    data = src.recv(BUFFER_SIZE)
+    if not data:
+        return False
+    else:
+        dst.sendall(data)
+        return True
+    
+
 def handle(browser: socket.socket, session: Session):
     try:
         proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -76,18 +86,20 @@ def handle(browser: socket.socket, session: Session):
     # Client send reply to accept browser
     browser.sendall(b"\x05\x00")
 
-    while True:
-        browser_data = browser.recv(BUFFER_SIZE)
-        proxy.sendall(browser_data)
-
-        proxy_data = proxy.recv(BUFFER_SIZE)
-        browser.sendall(proxy_data)
-
-        if not browser_data:
-            print(f"[INFO] {session.addr} close connection")
+    inputs = [browser, proxy]
+    while inputs:
+        readable, _, _ = select.select(inputs, [], [])
+        for ready_socket in readable:
+            if ready_socket == proxy:
+                success = forward_data(ready_socket, browser)
+            if ready_socket == browser:
+                success = forward_data(ready_socket, proxy)
+            if not success:
+                proxy.close()
+                break
+        if proxy.fileno() == -1:
             break
 
-        print(f"[INFO] {session.addr} : {browser_data}")
 
 
 def session_listen(session: Session, host, port):
