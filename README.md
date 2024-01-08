@@ -1,35 +1,11 @@
 # FUXLOGSOCKS Client
 
-### Requirement
-- GUI(Terminal form) for Edit/Save Proxy Server information
-- Support USERNAME/PASSWORD authentication with FUXLOGSOCKS Proxy Server
-- Support register USERNAME/PASSWORD to FUXLOGSOCKS Proxy Server
+### Install
+Python: `3.11`
 
-
-### GUI Review
-
+Install requirement dependencies
 ```
-Welcome to FUXLOGSOCKS client
-    1. Authenticate
-    2. Register
-    0. Exit
+pip install -r requirements.txt
 ```
 
-For user input display
-```
-[USER] > _
-```
-
-Authenticate
-```
-Authentication USERNAME/PASSWORD:
-Username:
-Password:
-```
-
-Register
-```
-Register USERNAME/PASSWORD
-Username (At least 8 characters): (USER WILL TYPE INPUT HERE)
-Password (At least 8 characters): (USER WILL TYPE INPUT HERE)
-```
+Run client: `python client.py`
