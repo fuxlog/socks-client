@@ -1,99 +1,91 @@
 import socket
 import threading
 import select
+import display
 from config import CLIENT_HOST, CLIENT_PORT, PROXY_HOST, PROXY_PORT
-from socks.authenticate import proxy_connection_authenticate
 from socks.constants import BUFFER_SIZE
-
-class Session:
-    def __init__(self, addr, username, password) -> None:
-        self.addr = addr
-        self.username = username
-        self.password = password
+from socks.utils import Session, Storage
+from socks.connection import connection, username_password_authenticate
+from socks.cryption import CryptoRequest, CryptoReply
 
 
-def welcome():
-    print("Welcome to FUXLOGSOCKS client")
-    print("    1. Connect to proxy")
-    print("    2. Register")
-    print("    0. Exit")
-
-
-def authenticate():
-    print("Authentication USERNAME/PASSWORD")
-    username = input("Username: ")
-    password = input("Password: ")
-    return username, password
-
-
-def register():
-    print("Register USERNAME/PASSWORD")
-    username = input("Username: ")
-    password = input("Password: ")
-    return username, password
-
-
-def user_select() -> int:
-    user = input("[USER] > ")
-    if user != "1" and user != "2" and user != "0":
-        print("Invalid input from user")
-        return -1
-    return int(user)
-
-
-def start():
-    welcome()
-    while True:
-        user = user_select()
-        if user == 0:
-            break
-        if user == 1:
-            username, password = authenticate()
-            session = Session(None, username, password)
-            session_listen(session, CLIENT_HOST, CLIENT_PORT)
-        if user == 2:
-            print(register())
-
-
-def forward_data(src: socket.socket, dst: socket.socket):
-    data = src.recv(BUFFER_SIZE)
-    if not data:
-        return False
-    else:
-        dst.sendall(data)
-        return True
-    
-
-def handle(browser: socket.socket, session: Session):
+def proxy_authentication(session: Session, username, password):
     try:
-        proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        proxy.connect((PROXY_HOST, PROXY_PORT))
-        print(f"[INFO] Found proxy server {(PROXY_HOST, PROXY_PORT)}")
+        proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        proxy_socket.connect((PROXY_HOST, PROXY_PORT))
+    except socket.error:
+        return False
+
+    session.sock = proxy_socket
+    if connection(session) is False:
+        return False
+
+    if username_password_authenticate(session, username, password) is False:
+        return False
+
+    return True
+
+
+# Mode 0 is Browser -> Client -> Proxy
+# Mode 1 is Proxy -> Client -> Browser
+def forward_data(src: socket.socket, dst: socket.socket, session: Session, mode):
+    try:
+        if mode == 0:
+            data = src.recv(BUFFER_SIZE)
+            if not data:
+                return False
+            request = CryptoRequest(session)
+            message = request.to_bytes(data)
+            l_message = len(message)
+            dst.sendall(l_message.to_bytes(2, "big"))
+            dst.sendall(message)
+
+        else:
+            bl_message = src.recv(2)
+            l_message = int.from_bytes(bl_message, "big")
+            message = src.recv(l_message)
+            if not message:
+                return False
+            reply = CryptoReply(session)
+            if not reply.from_bytes(message):
+                return False
+            dst.sendall(reply.data)
+
+        return True
     except socket.error as e:
         print(e)
-        return
-    
-    if proxy_connection_authenticate(proxy, session.username, session.password) is False:
-        print(f"[INFO] {session.addr} Authenticate with proxy server failed")
-        return
 
 
-    print(f"[INFO] {session.addr} connected to FUXLOGSOCKS client")
-    # Browser send VERSION 5, NO AUTHENTICATION REQUIRED
-    data = browser.recv(4096)
-    if not data:
+def handle(browser: socket.socket, browser_addr, storage: Storage):
+    session = Session()
+    proxy_status = proxy_authentication(session, storage.username, storage.password)
+
+    if proxy_status is False:
+        print(f"[ERROR] Proxy server: Connect and authenticate failed")
         return
-    # Client send reply to accept browser
+
+    # If authentication succeeds, initialize session with key is password
+    session.browser_addr = browser_addr
+    session.key = storage.password
+
+    # Browser uses NO AUTHENTICATION REQUIRED '\x00'
+    browser_connection = browser.recv(BUFFER_SIZE)
+    if not browser_connection:
+        return
+    # Send message to accept browser
     browser.sendall(b"\x05\x00")
 
+    proxy = session.sock
+    # Multiplex 2 sockets handle
     inputs = [browser, proxy]
     while inputs:
         readable, _, _ = select.select(inputs, [], [])
         for ready_socket in readable:
+            success = False
             if ready_socket == proxy:
-                success = forward_data(ready_socket, browser)
+                success = forward_data(ready_socket, browser, session, 1)
             if ready_socket == browser:
-                success = forward_data(ready_socket, proxy)
+                success = forward_data(ready_socket, proxy, session, 0)
             if not success:
                 proxy.close()
                 break
@@ -101,18 +93,38 @@ def handle(browser: socket.socket, session: Session):
             break
 
 
-
-def session_listen(session: Session, host, port):
+def listen_incoming(host, port, storage):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.bind((host, port))
     client.listen(20)
     print(f"[INFO] Client start listening on {(host, port)}")
     while True:
         browser, addr = client.accept()
-        session.addr = addr
-        browser_handler = threading.Thread(target=handle, args=(browser, session, ))
+        browser_handler = threading.Thread(target=handle, args=(browser, addr, storage,))
         browser_handler.start()
 
-    
+
+def start():
+    while True:
+        display.welcome()
+        while True:
+            picked = display.user_select()
+            if picked == 0:
+                return
+            if picked == 1:
+                username, password = display.authenticate_input()
+                if len(username) == 0 and len(password) == 0:
+                    break
+                storage = Storage()
+                storage.username = username
+                storage.password = password
+                print("-------------------------FUXLOG-CLIENT------------------------")
+                print("[INFO] Authentication information saved")
+                print("[INFO] If authentication fails, restart and authenticate again")
+                listen_incoming(CLIENT_HOST, CLIENT_PORT, storage)
+            if picked == 2:
+                print(display.register_input())
+
+
 if __name__ == "__main__":
     start()

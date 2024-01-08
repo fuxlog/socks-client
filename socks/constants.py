@@ -1,4 +1,5 @@
 BUFFER_SIZE = 12288
+PUBLIC_KEY = "FUXLOG"
 
 
 class General:
@@ -36,7 +37,6 @@ class RegisterStatus:
     SUCCESS = 0
     USERNAME_IS_EXISTED = 1
     INVALID_USERNAME_PASSWORD = 2
-
 
 
 class ReplyStatus:

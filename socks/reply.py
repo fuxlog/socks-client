@@ -1,8 +1,5 @@
-from .constants import General, AddressType, Command, ReplyStatus
+class ConnectionReply:
 
-
-class ConnectionReply():
-    
     def __init__(self):
         self.version = None
         self.method = None
@@ -17,7 +14,7 @@ class ConnectionReply():
         return True
 
 
-class AuthenticationReply():
+class AuthenticationReply:
 
     def __init__(self):
         self.version = None

@@ -1,5 +1,5 @@
-class ConnectionRequest():
-    def __init__(self, version: int, methods: set) -> None:
+class ConnectionRequest:
+    def __init__(self, version: int, methods: tuple) -> None:
         self.version = version
         self.methods = methods
 
@@ -7,7 +7,7 @@ class ConnectionRequest():
         return self.version.to_bytes(1, "big") + len(self.methods).to_bytes(1, "big") + bytes(self.methods)
 
 
-class AuthenticationRequest():
+class AuthenticationRequest:
     def __init__(self, version: int, uname: str, pword: str):
         self.version = version
         self.uname = uname
@@ -15,4 +15,4 @@ class AuthenticationRequest():
 
     def to_bytes(self):
         return self.version.to_bytes(1, "big") + len(self.uname).to_bytes(1, "big") + self.uname.encode() \
-                + len(self.pword).to_bytes(1, "big") + self.pword.encode()
+            + len(self.pword).to_bytes(1, "big") + self.pword.encode()
