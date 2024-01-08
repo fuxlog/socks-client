@@ -21,3 +21,7 @@ pip install -r requirements.txt
 ```
 
 Run client: `python client.py`
+
+### Using
+
+For chrome: [FUXLOG Proxy](https://github.com/fuxlog/socks-extension)
