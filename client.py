@@ -5,7 +5,7 @@ import display
 from config import CLIENT_HOST, CLIENT_PORT, PROXY_HOST, PROXY_PORT
 from socks.constants import BUFFER_SIZE
 from socks.utils import Session, Storage
-from socks.connection import connection, username_password_authenticate
+from socks.connection import connection, username_password_authenticate, username_password_register
 from socks.cryption import CryptoRequest, CryptoReply
 
 
@@ -104,6 +104,24 @@ def listen_incoming(host, port, storage):
         browser_handler.start()
 
 
+def send_register(PROXY_HOST, PROXY_PORT, storage: Storage):
+    try:
+        proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        proxy_socket.connect((PROXY_HOST, PROXY_PORT))
+    except socket.error:
+        return False
+
+    session = Session()
+    session.sock = proxy_socket
+    if connection(session) is False:
+        return False
+    
+    if username_password_register(session, storage.username, storage.password) is False:
+        return False
+    
+    return True
+    
+
 def start():
     while True:
         display.welcome()
@@ -123,8 +141,16 @@ def start():
                 print("[INFO] If authentication fails, restart and authenticate again")
                 listen_incoming(CLIENT_HOST, CLIENT_PORT, storage)
             if picked == 2:
-                print(display.register_input())
-
+                username, password = display.register_input()
+                if len(username) == 0 and len(password) == 0:
+                    break
+                storage = Storage()
+                storage.username = username
+                storage.password = password
+                print("-------------------------FUXLOG-CLIENT------------------------")
+                print("[INFO] Register information sent")
+                print("[INFO] If register fails, restart and register again")
+                register = send_register(PROXY_HOST, PROXY_PORT, storage)
 
 if __name__ == "__main__":
     start()
