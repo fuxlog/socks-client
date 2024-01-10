@@ -7,6 +7,7 @@ from socks.constants import BUFFER_SIZE
 from socks.utils import Session, Storage
 from socks.connection import connection, username_password_authenticate
 from socks.cryption import CryptoRequest, CryptoReply
+from cryptography.exceptions import InvalidTag
 
 
 def proxy_authentication(session: Session, username, password):

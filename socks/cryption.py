@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
+from cryptography.exceptions import InvalidTag
 from .utils import Session
 
 
@@ -29,12 +30,14 @@ class CryptoReply:
     def from_bytes(self, data: bytes):
         if len(data) < 16:
             return False
-
-        salt = data[0: 16]
-        encrypted_data = data[16: len(data)]
-        key, salt = generate_key(self.password.encode(), salt)
-        self.data = decrypt_data(key, encrypted_data)
-
+        try:
+            salt = data[0: 16]
+            encrypted_data = data[16: len(data)]
+            key, salt = generate_key(self.password.encode(), salt)
+            self.data = decrypt_data(key, encrypted_data)
+        except InvalidTag as e:
+            print(e)
+            return False
         return True
 
 
