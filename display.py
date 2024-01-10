@@ -30,7 +30,7 @@ def change_password_input():
 
 def user_select() -> int:
     user = input("[USER] > ")
-    if user != "1" and user != "2" and user != "0":
+    if user != "1" and user != "2" and user != "3" and user != "0":
         print("Invalid input from user")
         return -1
     return int(user)

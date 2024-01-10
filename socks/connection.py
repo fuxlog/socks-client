@@ -1,7 +1,7 @@
 import socket
 from .constants import AuthenticationStatus, Method, General
 from .reply import ConnectionReply, AuthenticationReply
-from .request import ConnectionRequest, AuthenticationRequest
+from .request import ConnectionRequest, AuthenticationRequest, ChangePasswordRequest
 from .utils import Session
 from .cryption import send_encrypted, recv_decrypted
 
@@ -54,4 +54,21 @@ def username_password_register(session: Session, username: str, password: str):
             return True
  
     print("[INFO] Register failed")
+    return False
+
+
+def change_password_request(session: Session, username: str, password: str, new_pword: str):
+    change_password_request = ChangePasswordRequest(General.MODIFIED_VERSION, username, password, new_pword)
+
+    send_encrypted(session, change_password_request.to_bytes())
+    data = recv_decrypted(session)
+
+    # Handle authentication reply
+    authentication_reply = AuthenticationReply()
+    if authentication_reply.from_bytes(data):
+        if authentication_reply.status == AuthenticationStatus.SUCCESS:
+            print("[INFO] Change password successfully")
+            return True
+        
+    print("[INFO] Change password failed")
     return False
