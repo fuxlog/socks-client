@@ -3,12 +3,11 @@ import threading
 import select
 import display
 from config import CLIENT_HOST, CLIENT_PORT, PROXY_HOST, PROXY_PORT
-from socks.constants import BUFFER_SIZE
+from socks.constants import BUFFER_SIZE, General
 from socks.utils import Session, Storage
-from socks.connection import connection, username_password_authenticate, username_password_register
+from socks.connection import connection, username_password_authenticate, username_password_register, change_password_request
 from socks.cryption import CryptoRequest, CryptoReply
 from cryptography.exceptions import InvalidTag
-
 
 def proxy_authentication(session: Session, username, password):
     try:
@@ -121,7 +120,25 @@ def send_register(PROXY_HOST, PROXY_PORT, storage: Storage):
         return False
  
     return True
- 
+
+def change_password(username, password):
+    session = Session()
+    proxy_status = proxy_authentication(session, username, password)
+    
+    if proxy_status is False:
+        print(f"[ERROR] Proxy server: Connect and authenticate failed")
+        return
+    
+    print("[INFO] Login successfully")
+    new_password = input("[INFO] Enter new password: ")
+    status = change_password_request(session, username, password, new_password)
+    if status is False:
+        print("[INFO] Change password failed")
+        return
+    
+    print("[INFO] Change password successfully")
+    return True
+    
  
 def start():
     while True:
@@ -152,14 +169,19 @@ def start():
                 print("-------------------------FUXLOG-CLIENT------------------------")
                 print("[INFO] Register information sent")
                 print("[INFO] If register fails, restart and register again")
-                register = send_register(PROXY_HOST, PROXY_PORT, storage)
+                status = send_register(PROXY_HOST, PROXY_PORT, storage)
  
             elif picked == 3:
-                username, password, new_password = display.change_password_input()
-                if len(username) == 0 and len(password) == 0 and len(new_password) == 0:
+                username, password = display.authenticate_input()
+                if len(username) == 0 and len(password) == 0:
                     break
+                storage = Storage()
+                storage.username = username
+                storage.password = password
+                print("-------------------------FUXLOG-CLIENT------------------------")
+                print("[INFO] Change password")
+                status = change_password(username, password)
+                
                
-               
- 
 if __name__ == "__main__":
     start()
