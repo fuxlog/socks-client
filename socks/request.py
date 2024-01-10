@@ -19,13 +19,11 @@ class AuthenticationRequest:
 
 
 class ChangePasswordRequest:
-    def __init__(self, version: int, uname: str, old_pword: str, new_pword: str):
+    def __init__(self, version: int, uname: str, new_pword: str):
         self.version = version
         self.uname = uname
-        self.old_pword = old_pword
         self.new_pword = new_pword
 
     def to_bytes(self):
         return self.version.to_bytes(1, "big") + len(self.uname).to_bytes(1, "big") + self.uname.encode() \
-            + len(self.old_pword).to_bytes(1, "big") + self.old_pword.encode() \
             + len(self.new_pword).to_bytes(1, "big") + self.new_pword.encode()
