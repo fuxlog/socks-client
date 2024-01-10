@@ -37,3 +37,21 @@ def username_password_authenticate(session: Session, username: str, password: st
             return True
 
     return False
+
+
+def username_password_register(session: Session, username: str, password: str):
+    # Authentication request and encrypt message with session.key
+    authentication_request = AuthenticationRequest(General.REGISTER_VERSION, username, password)
+ 
+    send_encrypted(session, authentication_request.to_bytes())
+    data = recv_decrypted(session)
+ 
+    # Handle authentication reply
+    authentication_reply = AuthenticationReply()
+    if authentication_reply.from_bytes(data):
+        if authentication_reply.status == AuthenticationStatus.SUCCESS:
+            print("[INFO] Register successfully")
+            return True
+ 
+    print("[INFO] Register failed")
+    return False
