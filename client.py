@@ -9,7 +9,7 @@ from socks.connection import connection, username_password_authenticate, usernam
 from socks.cryption import CryptoRequest, CryptoReply
 from cryptography.exceptions import InvalidTag
 
-def proxy_authentication(session: Session, username, password):
+def proxy_authentication(session: Session, version, username, password):
     try:
         proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         proxy_socket.connect((PROXY_HOST, PROXY_PORT))
@@ -20,7 +20,7 @@ def proxy_authentication(session: Session, username, password):
     if connection(session) is False:
         return False
 
-    if username_password_authenticate(session, username, password) is False:
+    if username_password_authenticate(session, version, username, password) is False:
         return False
 
     return True
@@ -58,7 +58,7 @@ def forward_data(src: socket.socket, dst: socket.socket, session: Session, mode)
 
 def handle(browser: socket.socket, browser_addr, storage: Storage):
     session = Session()
-    proxy_status = proxy_authentication(session, storage.username, storage.password)
+    proxy_status = proxy_authentication(session, General.AUTHENTICATION_VERSION, storage.username, storage.password)
 
     if proxy_status is False:
         print(f"[ERROR] Proxy server: Connect and authenticate failed")
@@ -121,22 +121,19 @@ def send_register(PROXY_HOST, PROXY_PORT, storage: Storage):
  
     return True
 
+
 def change_password(username, password):
     session = Session()
-    proxy_status = proxy_authentication(session, username, password)
+    proxy_status = proxy_authentication(session, General.MODIFIED_VERSION, username, password)
     
     if proxy_status is False:
         print(f"[ERROR] Proxy server: Connect and authenticate failed")
-        return
+        return False
     
     print("[INFO] Login successfully")
-    new_password = input("[INFO] Enter new password: ")
-    status = change_password_request(session, username, password, new_password)
-    if status is False:
-        print("[INFO] Change password failed")
-        return
-    
-    print("[INFO] Change password successfully")
+    new_password = input("Enter new password: ")
+    status = change_password_request(session, username, new_password)
+   
     return True
     
  

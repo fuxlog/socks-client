@@ -23,9 +23,9 @@ def connection(session: Session):
     return False
 
 
-def username_password_authenticate(session: Session, username: str, password: str):
+def username_password_authenticate(session: Session, version: int, username: str, password: str):
     # Authentication request and encrypt message with session.key
-    authentication_request = AuthenticationRequest(General.AUTHENTICATION_VERSION, username, password)
+    authentication_request = AuthenticationRequest(version, username, password)
 
     send_encrypted(session, authentication_request.to_bytes())
     data = recv_decrypted(session)
@@ -57,8 +57,8 @@ def username_password_register(session: Session, username: str, password: str):
     return False
 
 
-def change_password_request(session: Session, username: str, password: str, new_pword: str):
-    change_password_request = ChangePasswordRequest(General.MODIFIED_VERSION, username, password, new_pword)
+def change_password_request(session: Session, username: str, new_pword: str):
+    change_password_request = ChangePasswordRequest(General.MODIFIED_VERSION, username, new_pword)
 
     send_encrypted(session, change_password_request.to_bytes())
     data = recv_decrypted(session)
